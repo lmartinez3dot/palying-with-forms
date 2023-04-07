@@ -1,17 +1,9 @@
 class PostsController < ApplicationController
-  # include ActionView::Helpers::SanitizeHelper
-  require 'uri'
-  require 'net/http'
+  include ActionView::Helpers::SanitizeHelper
   before_action :set_post, only: %i[ show edit update destroy ]
 
   # GET /posts or /posts.json
   def index
-    # byebug
-    # uri = URI('http://localhost:3000/requisitions')
-    uri = URI('http://localhost:3000/sign_standards?layout=popup')
-    res = Net::HTTP.get_response(uri)
-    # byebugc
-    puts res.body if res.is_a?(Net::HTTPSuccess)
     @posts = Post.all
   end
 
@@ -33,13 +25,11 @@ class PostsController < ApplicationController
 
   # POST /posts or /posts.json
   def create
-    byebug
     @post = Post.new(post_params)
     @post.user = User.first
-
+    cleanup_post
     respond_to do |format|
       if @post.save
-        render :new and return
         format.html { redirect_to post_url(@post), notice: "Post was successfully created." }
         format.json { render :show, status: :created, location: @post }
       else
@@ -51,12 +41,12 @@ class PostsController < ApplicationController
 
   # PATCH/PUT /posts/1 or /posts/1.json
   def update
-    # byebug
     # @post.body = sanitize(post_params['body'])
     # @post.title = sanitize(post_params['title'])
+    cleanup_post
     respond_to do |format|
-      if @post.update(post_params)
-      # if @post.save
+      # if @post.update(post_params)
+      if @post.save
         format.html { redirect_to post_url(@post), notice: "Post was successfully updated." }
         format.json { render :show, status: :ok, location: @post }
       else
@@ -85,5 +75,10 @@ class PostsController < ApplicationController
     # Only allow a list of trusted parameters through.
     def post_params
       params.require(:post).permit(:title, :body)
+    end
+
+    def cleanup_post
+        @post.body = sanitize(post_params['body'])
+        @post.title = sanitize(post_params['title'])
     end
 end
